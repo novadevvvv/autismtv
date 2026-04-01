@@ -1,0 +1,7 @@
+{
+  "autismtv.command.panel.spawned": "Started rendering your second monitor on a local 16:9 panel at 30 FPS.",
+  "autismtv.command.panel.cleared": "Cleared the local panel.",
+  "autismtv.command.panel.none": "There is no local panel to clear.",
+  "autismtv.command.panel.no_second_monitor": "No second monitor was detected.",
+  "autismtv.command.panel.capture_failed": "Failed to capture your second monitor."
+}

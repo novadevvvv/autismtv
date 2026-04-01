@@ -1,0 +1,13 @@
+{
+  "required": true,
+  "package": "dev.novab.autismtv.mixin.client",
+  "compatibilityLevel": "JAVA_21",
+  "client": [
+    "KeyboardMixin",
+    "MouseMixin",
+    "OptionsScreenMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

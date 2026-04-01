@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "id": "autismtv",
+  "version": "${version}",
+  "name": "AutismTV",
+  "description": "Adds a client-only command that spawns a local black 16:9 panel in front of the player.",
+  "authors": [
+    "GitHub Copilot"
+  ],
+  "license": "MIT",
+  "environment": "client",
+  "entrypoints": {
+    "main": [
+      "dev.novab.autismtv.AutismTVMod"
+    ],
+    "client": [
+      "dev.novab.autismtv.client.AutismTVClient"
+    ]
+  },
+  "mixins": [
+    "autismtv.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=0.18.5",
+    "fabric-command-api-v2": "*",
+    "fabric-rendering-v1": "*",
+    "minecraft": "1.21.11",
+    "java": ">=21"
+  }
+}
