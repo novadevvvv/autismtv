@@ -362,8 +362,6 @@ public final class SessionHubScreen extends Screen {
         context.drawTextWithShadow(this.textRenderer, this.title, layout.contentLeft + 34, 30, 0xFFF3F5F7);
         this.drawWrappedText(context, Text.literal(this.getHeaderSubtitle()), layout.contentLeft + 34, 48, layout.contentWidth - 220, 0xFFB8C3CC, 10);
 
-        this.renderTabIndicators(context, layout);
-
         if (this.activeTab == HubTab.ACTIVE_SESSIONS) {
             this.renderActiveSessions(context, layout);
         } else if (this.activeTab == HubTab.CREATION) {
@@ -375,27 +373,6 @@ public final class SessionHubScreen extends Screen {
         SessionNotificationCenter.render(context, this.textRenderer, this.width, this.height);
     this.updateWidgetAnimations();
         super.render(context, mouseX, mouseY, delta);
-    }
-
-    private void renderTabIndicators(DrawContext context, Layout layout) {
-    if (layout.navRows == 1) {
-        int chipWidth = (layout.contentWidth - (TAB_GAP * 2)) / 3;
-        this.drawStatusChip(context, layout.contentLeft, layout.navTop, chipWidth, "Active Sessions",
-            this.activeTab == HubTab.ACTIVE_SESSIONS ? 0xFFD6B16F : 0xFF4C5F6D);
-        this.drawStatusChip(context, layout.contentLeft + chipWidth + TAB_GAP, layout.navTop, chipWidth, "Creation",
-            this.activeTab == HubTab.CREATION ? 0xFFD6B16F : 0xFF4C5F6D);
-        this.drawStatusChip(context, layout.contentLeft + (chipWidth + TAB_GAP) * 2, layout.navTop, chipWidth, "My Sessions",
-            this.activeTab == HubTab.MY_SESSIONS ? 0xFFD6B16F : 0xFF4C5F6D);
-        return;
-    }
-
-    int rowWidth = (layout.contentWidth - TAB_GAP) / 2;
-    this.drawStatusChip(context, layout.contentLeft, layout.navTop, rowWidth, "Active Sessions",
-        this.activeTab == HubTab.ACTIVE_SESSIONS ? 0xFFD6B16F : 0xFF4C5F6D);
-    this.drawStatusChip(context, layout.contentLeft + rowWidth + TAB_GAP, layout.navTop, rowWidth, "Creation",
-        this.activeTab == HubTab.CREATION ? 0xFFD6B16F : 0xFF4C5F6D);
-    this.drawStatusChip(context, layout.contentLeft, layout.navTop + 28, rowWidth, "My Sessions",
-        this.activeTab == HubTab.MY_SESSIONS ? 0xFFD6B16F : 0xFF4C5F6D);
     }
 
     private void renderActiveSessions(DrawContext context, Layout layout) {

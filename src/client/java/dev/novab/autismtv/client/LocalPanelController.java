@@ -2,8 +2,6 @@ package dev.novab.autismtv.client;
 
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.CommandDispatcher;
-import com.mojang.brigadier.arguments.IntegerArgumentType;
-import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
@@ -109,30 +107,8 @@ public final class LocalPanelController {
     }
 
     public static void registerCommands(CommandDispatcher<FabricClientCommandSource> dispatcher, Object registryAccess) {
-        dispatcher.register(createLegacyPanelCommand("localpanel"));
         dispatcher.register(createPanelCommand());
         dispatcher.register(createAnchorCommand());
-    }
-
-    private static LiteralArgumentBuilder<FabricClientCommandSource> createLegacyPanelCommand(String root) {
-        return ClientCommandManager.literal(root)
-            .then(ClientCommandManager.literal("spawn").executes(context -> spawnPanel(context.getSource())))
-            .then(ClientCommandManager.literal("clear").executes(context -> clearPanel(context.getSource())))
-            .then(ClientCommandManager.literal("host")
-                .executes(context -> hostShare(context.getSource(), "AutismTV Session", "", PeerShareTransport.getDefaultPort()))
-                .then(ClientCommandManager.argument("name", StringArgumentType.greedyString())
-                    .executes(context -> hostShare(context.getSource(), StringArgumentType.getString(context, "name"), "",
-                        PeerShareTransport.getDefaultPort())))
-                .then(ClientCommandManager.argument("port", IntegerArgumentType.integer(1024, 65535))
-                    .executes(context -> hostShare(context.getSource(), "AutismTV Session", "",
-                        IntegerArgumentType.getInteger(context, "port")))))
-            .then(ClientCommandManager.literal("join")
-                .then(ClientCommandManager.argument("host", StringArgumentType.string())
-                    .executes(context -> joinShare(context.getSource(), StringArgumentType.getString(context, "host"), PeerShareTransport.getDefaultPort(), ""))
-                    .then(ClientCommandManager.argument("port", IntegerArgumentType.integer(1024, 65535))
-                        .executes(context -> joinShare(context.getSource(), StringArgumentType.getString(context, "host"),
-                            IntegerArgumentType.getInteger(context, "port"), "")))))
-            .then(ClientCommandManager.literal("disconnect").executes(context -> disconnectShare(context.getSource())));
     }
 
     private static LiteralArgumentBuilder<FabricClientCommandSource> createPanelCommand() {
@@ -347,37 +323,6 @@ public final class LocalPanelController {
         activePanel = new LocalPanel(anchor.center(), anchor.normal(), anchor.right(), anchor.up(), config.getPanelWidth() * 0.5D,
                 config.getPanelHeight() * 0.5D, PANEL_THICKNESS * 0.5D);
         publishPanelState();
-    }
-
-    private static int hostShare(FabricClientCommandSource source, String name, String password, int port) {
-        try {
-            String bindAddress = PeerShareTransport.startHosting(name, "", password, port, true, true);
-            publishPanelState();
-            source.sendFeedback(Text.literal("Hosting panel share on " + bindAddress + ". Join from another client with /localpanel join <host> " + port));
-            return Command.SINGLE_SUCCESS;
-        } catch (Exception exception) {
-            source.sendError(Text.literal("Failed to host panel share: " + exception.getMessage()));
-            return 0;
-        }
-    }
-
-    private static int joinShare(FabricClientCommandSource source, String host, int port, String password) {
-        try {
-            stopCapture(MinecraftClient.getInstance());
-            PeerShareTransport.join(host, port, password);
-            source.sendFeedback(Text.literal("Joined panel share at " + host + ":" + port));
-            return Command.SINGLE_SUCCESS;
-        } catch (Exception exception) {
-            source.sendError(Text.literal("Failed to join panel share: " + exception.getMessage()));
-            return 0;
-        }
-    }
-
-    private static int disconnectShare(FabricClientCommandSource source) {
-        PeerShareTransport.disconnect();
-        PeerShareTransport.stopHosting();
-        source.sendFeedback(Text.literal("Stopped peer panel sharing."));
-        return Command.SINGLE_SUCCESS;
     }
 
     public static void render(WorldRenderContext context) {
