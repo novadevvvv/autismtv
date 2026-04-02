@@ -92,6 +92,12 @@ final class PeerShareTransport {
 
     static synchronized String startHosting(String sessionName, String description, String password, int port,
                                             boolean defaultAllowClicks, boolean defaultAllowTyping) throws IOException {
+        if (ServerRelayTransport.isAvailable()) {
+            disconnect();
+            stopHosting();
+            return ServerRelayTransport.startHosting(sessionName, description, password, defaultAllowClicks, defaultAllowTyping);
+        }
+
         disconnect();
         stopHosting();
         hostSession = new HostSession(sessionName, description, password, port, defaultAllowClicks, defaultAllowTyping);
@@ -99,6 +105,10 @@ final class PeerShareTransport {
     }
 
     static synchronized void stopHosting() {
+        if (ServerRelayTransport.getHostedSessionInfo() != null) {
+            ServerRelayTransport.stopHosting();
+        }
+
         if (hostSession != null) {
             hostSession.close();
             hostSession = null;
@@ -106,26 +116,53 @@ final class PeerShareTransport {
     }
 
     static synchronized SessionInfo getHostedSessionInfo() {
+        SessionInfo serverHosted = ServerRelayTransport.getHostedSessionInfo();
+        if (serverHosted != null) {
+            return serverHosted;
+        }
+
         return hostSession != null ? hostSession.getSessionInfo(true) : null;
     }
 
     static synchronized List<ViewerInfo> getConnectedViewers() {
+        SessionInfo serverHosted = ServerRelayTransport.getHostedSessionInfo();
+        if (serverHosted != null) {
+            return ServerRelayTransport.getConnectedViewers();
+        }
+
         return hostSession != null ? hostSession.getViewerInfos() : List.of();
     }
 
     static synchronized void updateViewerPermissions(String viewerId, boolean allowClicks, boolean allowTyping) {
+        if (ServerRelayTransport.getHostedSessionInfo() != null) {
+            ServerRelayTransport.updateViewerPermissions(viewerId, allowClicks, allowTyping);
+            return;
+        }
+
         if (hostSession != null) {
             hostSession.updateViewerPermissions(viewerId, allowClicks, allowTyping);
         }
     }
 
     static synchronized void updateDefaultPermissions(boolean allowClicks, boolean allowTyping) {
+        if (ServerRelayTransport.getHostedSessionInfo() != null) {
+            ServerRelayTransport.updateDefaultPermissions(allowClicks, allowTyping);
+            return;
+        }
+
         if (hostSession != null) {
             hostSession.updateDefaultPermissions(allowClicks, allowTyping);
         }
     }
 
     static synchronized void join(SessionInfo session, String password) throws IOException {
+        if (ServerRelayTransport.isServerSession(session)) {
+            stopHosting();
+            disconnect();
+            ServerRelayTransport.join(session, password);
+            return;
+        }
+
         stopHosting();
         disconnect();
         clientSession = new ClientSession(session.host(), session.port(), password == null ? "" : password);
@@ -138,6 +175,10 @@ final class PeerShareTransport {
     }
 
     static synchronized void disconnect() {
+        if (ServerRelayTransport.getCurrentRemoteSession() != null || ServerRelayTransport.getHostedSessionInfo() != null) {
+            ServerRelayTransport.disconnect();
+        }
+
         if (clientSession != null) {
             clientSession.close();
             clientSession = null;
@@ -149,14 +190,29 @@ final class PeerShareTransport {
     }
 
     static synchronized SessionInfo getCurrentRemoteSession() {
+        SessionInfo serverRemote = ServerRelayTransport.getCurrentRemoteSession();
+        if (serverRemote != null) {
+            return serverRemote;
+        }
+
         return currentRemoteSession;
     }
 
     static synchronized boolean canRemoteClick() {
+        SessionInfo serverRemote = ServerRelayTransport.getCurrentRemoteSession();
+        if (serverRemote != null) {
+            return ServerRelayTransport.canRemoteClick();
+        }
+
         return currentViewerAccess.allowClicks();
     }
 
     static synchronized boolean canRemoteType() {
+        SessionInfo serverRemote = ServerRelayTransport.getCurrentRemoteSession();
+        if (serverRemote != null) {
+            return ServerRelayTransport.canRemoteType();
+        }
+
         return currentViewerAccess.allowTyping();
     }
 
@@ -174,6 +230,7 @@ final class PeerShareTransport {
         }
 
         sessions.addAll(readLocalSessions(now));
+        sessions.addAll(ServerRelayTransport.getDiscoveredSessions());
 
         SessionInfo hosted = getHostedSessionInfo();
         if (hosted != null) {
@@ -195,32 +252,59 @@ final class PeerShareTransport {
     }
 
     static synchronized void broadcastPanelState(LocalPanelController.PanelSnapshot snapshot) {
+        if (ServerRelayTransport.getHostedSessionInfo() != null) {
+            ServerRelayTransport.broadcastPanelState(snapshot);
+            return;
+        }
+
         if (hostSession != null) {
             hostSession.broadcastPanelState(snapshot);
         }
     }
 
     static synchronized void broadcastFrame(int width, int height, int[] argbPixels) {
+        if (ServerRelayTransport.getHostedSessionInfo() != null) {
+            ServerRelayTransport.broadcastFrame(width, height, encodeFrame(width, height, argbPixels));
+            return;
+        }
+
         if (hostSession != null) {
             hostSession.broadcastFrame(width, height, argbPixels);
         }
     }
 
     static synchronized void broadcastClear() {
+        if (ServerRelayTransport.getHostedSessionInfo() != null) {
+            ServerRelayTransport.broadcastClear();
+            return;
+        }
+
         if (hostSession != null) {
             hostSession.broadcastClear();
         }
     }
 
     static synchronized boolean sendRemoteMouse(int button, int action, double u, double v) {
+        if (ServerRelayTransport.getCurrentRemoteSession() != null) {
+            return ServerRelayTransport.sendRemoteMouse(button, action, u, v);
+        }
+
         return clientSession != null && clientSession.sendRemoteMouse(button, action, u, v);
     }
 
     static synchronized boolean sendRemoteKey(int action, int keycode) {
+        if (ServerRelayTransport.getCurrentRemoteSession() != null) {
+            return ServerRelayTransport.sendRemoteKey(action, keycode);
+        }
+
         return clientSession != null && clientSession.sendRemoteKey(action, keycode);
     }
 
     static synchronized boolean sendRemoteChar(int codepoint) {
+        if (ServerRelayTransport.getCurrentRemoteSession() != null) {
+            return ServerRelayTransport.sendRemoteChar(codepoint);
+        }
+
         return clientSession != null && clientSession.sendRemoteChar(codepoint);
     }
 
@@ -751,7 +835,7 @@ final class PeerShareTransport {
             input.readBoolean(), input.readDouble());
     }
 
-    private static byte[] encodeFrame(int width, int height, int[] argbPixels) {
+    static byte[] encodeFrame(int width, int height, int[] argbPixels) {
         try {
             BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
             int[] pixels = ((DataBufferInt) image.getRaster().getDataBuffer()).getData();
@@ -768,7 +852,7 @@ final class PeerShareTransport {
         }
     }
 
-    private static int[] decodeFrame(byte[] data, int width, int height) {
+    static int[] decodeFrame(byte[] data, int width, int height) {
         try {
             BufferedImage decoded = ImageIO.read(new ByteArrayInputStream(data));
             if (decoded == null) {

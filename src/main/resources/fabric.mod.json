@@ -3,9 +3,9 @@
   "id": "autismtv",
   "version": "${version}",
   "name": "AutismTV",
-  "description": "Adds a client-only command that spawns a local black 16:9 panel in front of the player.",
+  "description": "AutismTV is a client-side Fabric mod for Minecraft 1.21.11 that turns a real display or shared screen into an in-world panel. You can spawn and position panels locally, save anchors, host discoverable viewing sessions, let other nearby clients join, and control per-viewer permissions for clicking and typing.",
   "authors": [
-    "GitHub Copilot"
+    "NovaDev"
   ],
   "license": "MIT",
   "environment": "client",

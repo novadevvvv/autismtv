@@ -10,6 +10,7 @@ public final class AutismTVClient implements ClientModInitializer {
         System.setProperty("java.awt.headless", "false");
         SharescreenConfig.get();
         PeerShareTransport.initialize();
+        ServerRelayTransport.initialize();
         ClientCommandRegistrationCallback.EVENT.register(LocalPanelController::registerCommands);
         WorldRenderEvents.BEFORE_TRANSLUCENT.register(LocalPanelController::render);
     }
